@@ -1,5 +1,11 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# ignore env
+.env
+
+# ignore backup
+backup/
+
 # dependencies
 /node_modules
 /.pnp

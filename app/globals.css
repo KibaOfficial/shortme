@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+html, 
+body {
+  height: 100%;
+  background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -14,6 +21,16 @@
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
   }
+}
+
+[data-theme='dark'] {
+  --background: black;
+  --foreground: white;
+}
+
+[data-theme='light'] {
+  --background: white;
+  --foreground: black;
 }
 
 body {
