@@ -3,27 +3,34 @@
 -- This software is released under the MIT License.
 -- https://opensource.org/licenses/MIT
 
--- Create Databse
+-- Create Database
 CREATE DATABASE IF NOT EXISTS shortme;
 
 -- Use created database
 USE shortme;
 
--- Createh the "users" table
+-- Create the "users" table
 CREATE TABLE users (
-  username VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
+  id INT AUTO_INCREMENT,
+  username VARCHAR(100) UNIQUE NOT NULL,
+  password VARCHAR(60) NOT NULL,
   session_token TEXT DEFAULT NULL,
   profile_image TEXT DEFAULT NULL,
-  PRIMARY KEY (username)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
 );
 
 -- Create the "links" table
 CREATE TABLE links (
-  code VARCHAR(255) UNIQUE NOT NULL,
-  origin VARCHAR(255) NOT NULL,
-  username VARCHAR(255) NOT NULL,
+  code VARCHAR(20) UNIQUE NOT NULL,
+  origin VARCHAR(2048) NOT NULL,
+  user_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  click_count INT DEFAULT 0,
   PRIMARY KEY (code),
-  FOREIGN KEY (username) REFERENCES users(username)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
 

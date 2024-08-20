@@ -1,8 +1,3 @@
-// Copyright (c) 2024 KibaOfficial
-//
-// This software is released under the MIT License.
-// https://opensource.org/licenses/MIT
-
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 import "./globals.css";
@@ -56,19 +51,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <head>
         <link rel="canonical" href={baseUrl} />
       </head>
       <body className={font.className}>
-        <Providers>
           <Header />
           {children}
-        </Providers>
       </body>
     </html>
   );

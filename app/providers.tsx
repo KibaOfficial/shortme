@@ -1,15 +1,14 @@
-// Copyright (c) 2024 KibaOfficial
-// 
-// This software is released under the MIT License.
-// https://opensource.org/licenses/MIT
+'use client';
 
-'use client'
-import { ThemeProvider } from "next-themes"
+import { ThemeProvider } from 'next-themes';
+import { CookiesProvider } from 'next-client-cookies/server';
 
-export function Providers({ children }: { children: React.ReactNode}) {
-    return (
-        <ThemeProvider defaultTheme="dark" enableSystem>
-            {children}
-        </ThemeProvider>
-    )
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <CookiesProvider>
+      <ThemeProvider defaultTheme="dark" enableSystem>
+        {children}
+      </ThemeProvider>
+    </CookiesProvider>
+  );
 }
