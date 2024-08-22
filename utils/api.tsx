@@ -10,6 +10,7 @@
 import bcrypt from "bcrypt";
 import fs from "fs";
 import jwt from "jsonwebtoken";
+import {cookies} from "next/headers"
 
 // Utils
 import DB from "./DB";
@@ -115,32 +116,48 @@ async function Login(username: string, password: string) {
   }
 }
 
+async function getCookie(name: string): Promise<string | null> {
+  const cookieStore = cookies(); 
+  const cookie = cookieStore.get(name);
+  console.log(cookie)
+  return cookie ? cookie.value : null;
+}
+
 async function validateSession(username: string, sessionToken: string) {
   try {
-    if (!username || !sessionToken) {
+    if (!username) {
+      return false;
+    }
+
+    // Wenn kein sessionToken übergeben wurde, versuchen, es aus den Cookies abzurufen
+    if (!sessionToken) {
+      sessionToken = await getCookie('session_token') || '';
+    }
+
+    if (!sessionToken) {
       return false;
     }
 
     const sql = "SELECT session_token FROM users WHERE username = ?";
-    const [result]: any = await new Promise<any>((resolve, reject) => {
+    const result: any[] = await new Promise<any[]>((resolve, reject) => {
       DB.query(sql, [username], (err, res) => {
         if (err) reject(err);
         else resolve(res);
       });
     });
 
-    if (result.length === 0) {
+    if (!result || result.length === 0) {
       return false;
     }
 
     const user = result[0];
-    if (user.session_token !== sessionToken) {
+    if (!user || !user.session_token) {
       return false;
     }
 
     // Verify token validity
     try {
-      jwt.verify(sessionToken, PRIV_KEY, { algorithms: ['RS256'] });
+      jwt.verify(sessionToken, PUB_KEY, { algorithms: ['RS256'] });
       return true;
     } catch (err) {
       return false;
@@ -150,6 +167,8 @@ async function validateSession(username: string, sessionToken: string) {
     return false;
   }
 }
+
+
 
 async function getUserBySessionToken (token: string): Promise<string | null> {
   const sql = "SELECT username FROM users WHERE session_token = ?";
@@ -170,4 +189,4 @@ async function getUserBySessionToken (token: string): Promise<string | null> {
 }
 
 
-export { Register, Login, validateSession, getUserBySessionToken};
+export { Register, Login, validateSession, getUserBySessionToken, getCookie};
