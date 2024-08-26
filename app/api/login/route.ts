@@ -4,7 +4,7 @@
 // https://opensource.org/licenses/MIT
 import { NextRequest, NextResponse } from 'next/server';
 import { Login } from '@/utils/api';
-import cookie from 'cookie';
+import { serialize} from 'cookie';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
     if (response.status === 200) {
       if (response.token) {
         const headers = new Headers();
-        headers.append('Set-Cookie', cookie.serialize('session_token', response.token, {
-          httpOnly: true,
+        headers.append('Set-Cookie', serialize('session_token', response.token, {
+          httpOnly: false,
           secure: process.env.NODE_ENV === 'production',
           maxAge: 60 * 60 * 24 * 7,
           sameSite: 'strict',

@@ -10,6 +10,7 @@
 import bcrypt from "bcrypt";
 import fs from "fs";
 import jwt from "jsonwebtoken";
+import Cookies from 'js-cookie';
 
 // Utils
 import DB from "./DB";
@@ -29,7 +30,7 @@ DB.connect((err) => {
   }
 });
 
-async function Register(username: string, password: string) {
+export async function Register(username: string, password: string) {
   try {
     if (!username || !password) {
       return { status: 400, message: "Username and password are required" };
@@ -57,22 +58,20 @@ async function Register(username: string, password: string) {
   }
 }
 
-
-async function Login(username: string, password: string) {
+export async function Login(username: string, password: string) {
   try {
     if (!username || !password) {
       return { status: 400, message: "Username and password are required" };
     }
 
-    const sql = "SELECT username, password, session_token FROM users WHERE username = ?";
+    const sql =
+      "SELECT username, password, session_token FROM users WHERE username = ?";
     const result: any[] = await new Promise<any[]>((resolve, reject) => {
       DB.query(sql, [username], (err, res) => {
         if (err) reject(err);
         else resolve(res);
       });
     });
-
-    console.log(`Database result: ${JSON.stringify(result)}`); // Debugging Log
 
     if (!result || result.length === 0) {
       return { status: 404, message: "User not found" };
@@ -88,14 +87,10 @@ async function Login(username: string, password: string) {
       return { status: 401, message: "Invalid password" };
     }
 
-    const token = jwt.sign(
-      { userid: user.username },
-      PRIV_KEY,
-      {
-        algorithm: "RS256",
-        expiresIn: SESSION_VALID_TIME_MS / 1000,
-      }
-    );
+    const token = jwt.sign({ userid: user.username }, PRIV_KEY, {
+      algorithm: "RS256",
+      expiresIn: SESSION_VALID_TIME_MS / 1000,
+    });
 
     const updateSql = "UPDATE users SET session_token = ? WHERE username = ?";
     await new Promise<void>((resolve, reject) => {
@@ -115,43 +110,62 @@ async function Login(username: string, password: string) {
   }
 }
 
-async function validateSession(username: string, sessionToken: string) {
-  try {
-    if (!username || !sessionToken) {
-      return false;
-    }
+export async function getSessionCookie(): Promise<string | null> {
+  const cookie = Cookies.get('session_token');
+  if (cookie) {
+    console.log(`DEBUG: User Session Cookie: ${cookie}`);
+    return cookie;
+  } else {
+    console.log("DEBUG: No session cookie found.");
+    return null;
+  }
+}
 
-    const sql = "SELECT session_token FROM users WHERE username = ?";
-    const [result]: any = await new Promise<any>((resolve, reject) => {
-      DB.query(sql, [username], (err, res) => {
-        if (err) reject(err);
-        else resolve(res);
-      });
+
+export async function isSessionValid(username: string, sessionToken?: string | null): Promise<boolean> {
+  if (!username) {
+    return false;
+  }
+  if (!sessionToken) {
+    sessionToken = await getSessionCookie();
+  }
+
+  if (!sessionToken) {
+    return false;
+  }
+
+  const sql = "SELECT session_token FROM users WHERE username = ?";
+  const values = [username];
+
+  const result = await new Promise<any[]>((resolve, reject) => {
+    DB.query(sql, values, (err, res) => {
+      if (err) reject(err);
+      else resolve(res);
     });
+  });
 
-    if (result.length === 0) {
-      return false;
-    }
+  if (!result || result.length === 0) {
+    return false;
+  }
 
-    const user = result[0];
-    if (user.session_token !== sessionToken) {
-      return false;
-    }
+  const user = result[0];
+  if (!user || !user.session_token) {
+    return false;
+  }
 
-    // Verify token validity
-    try {
-      jwt.verify(sessionToken, PRIV_KEY, { algorithms: ['RS256'] });
-      return true;
-    } catch (err) {
-      return false;
-    }
-  } catch (error) {
-    console.error(error);
+  try {
+    jwt.verify(sessionToken, PUB_KEY, { algorithms: ["RS256"] });
+    return true;
+  } catch (err) {
+    console.error(err);
     return false;
   }
 }
 
-async function getUserBySessionToken (token: string): Promise<string | null> {
+
+export async function getUserBySessionToken(
+  token: string
+): Promise<string | null> {
   const sql = "SELECT username FROM users WHERE session_token = ?";
   const values = [token];
 
@@ -168,6 +182,3 @@ async function getUserBySessionToken (token: string): Promise<string | null> {
     });
   });
 }
-
-
-export { Register, Login, validateSession, getUserBySessionToken};

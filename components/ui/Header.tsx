@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import ThemeSwitch from "./ThemeSwitch";
 import Link from "next/link";
 import Image from "next/image";
 import { FiMenu, FiX } from "react-icons/fi";
@@ -82,9 +81,6 @@ const Header: React.FC = () => {
                       </a>
                     </Link>
                   </li>
-                  <li>
-                    <ThemeSwitch />
-                  </li>
                 </ul>
               </div>
             </div>
@@ -117,9 +113,6 @@ const Header: React.FC = () => {
                     Auth
                   </a>
                 </Link>
-              </li>
-              <li>
-                <ThemeSwitch />
               </li>
             </ul>
           </nav>
