@@ -10,10 +10,15 @@ dotenv.config();
 type LoggerStatus = "ERROR" | "WARN" | "INFO" | "DEBUG";
 
 interface LoggerProps {
-  status: LoggerStatus;
-  message: string;
+  status: LoggerStatus; // status of the log
+  message: string;      // message to log
 }
 
+
+/**
+ * Logs a message to the console when DEBUG=true in the .env
+ * @param {LoggerProps} props - Object that contains status and message string
+*/
 const Logger = ({ status, message }: LoggerProps): void => {
   if (process.env.DEBUG === "true") {
     const curretDate = new Date().toISOString();
