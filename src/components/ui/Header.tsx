@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { FiMenu, FiX } from "react-icons/fi";
+import Logger from "@/utils/logger";
 
 const Header: React.FC = () => {
   const pathname = usePathname();
@@ -21,7 +22,7 @@ const Header: React.FC = () => {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  console.log(`Current path: ${pathname}`);
+  Logger({ status: 'INFO', message: `Current path: ${pathname}`})
 
   return (
     <div className="bg-gray-900 text-white top-0 z-50">
