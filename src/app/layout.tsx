@@ -4,7 +4,6 @@ import "./globals.css";
 
 // Components
 import Header from "@/components/ui/Header";
-import { Providers } from "./providers";
 
 const font = Figtree({ subsets: ["latin"] });
 
