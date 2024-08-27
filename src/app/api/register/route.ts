@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Register } from '@/utils/api';
 
+
 export async function POST(request: NextRequest) {
   const { username, password } = await request.json();
 
