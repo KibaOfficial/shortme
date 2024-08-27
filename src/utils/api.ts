@@ -193,10 +193,7 @@ export async function getSessionCookie(): Promise<string | null> {
  * @param {string | null} [sessionToken] - The session token (optional). If not provided, it will be retrieved from cookies.
  * @returns {Promise<boolean>} True if the session is valid, false otherwise.
  */
-export async function isSessionValid(
-  username: string,
-  sessionToken?: string | null,
-): Promise<boolean> {
+export async function isSessionValid(username: string, sessionToken?: string | null): Promise<boolean> {
   try {
     if (!username) {
       Logger({ status: "WARN", message: "Username is required" });
