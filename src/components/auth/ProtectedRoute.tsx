@@ -6,7 +6,7 @@
 import { useCookies } from "react-cookie";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getUserBySessionToken, isSessionValid } from "@/utils/api";
+import { getUserData, isSessionValid } from "@/lib/api";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -30,14 +30,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           return;
         }
 
-        const username = await getUserBySessionToken(token);
+        const userData = await getUserData();
+        if (!userData) {
+          setIsSessionValidState(false);
+          router.push("/auth");
+          return;
+        }
+        const username = userData[0]
         if (username === null) {
           setIsSessionValidState(false);
           router.push("/auth");
           return;
         }
 
-        const valid = await isSessionValid(username, token)
+        const valid = await isSessionValid(username)
         setIsSessionValidState(valid);
       } catch (error) {
         console.error(error);
