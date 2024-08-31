@@ -13,8 +13,8 @@ import jwt from "jsonwebtoken";
 import Cookies from 'js-cookie';
 
 // Import utility modules
-import DB from "./DB";
-import Logger from "./logger";
+import DB from "@/lib/DB";
+import Logger from "@/lib/logger";
 
 // Load private and public keys for JWT
 const PRIV_KEY_FILE = "./data/key.pem";
@@ -24,6 +24,15 @@ const PUB_KEY = fs.readFileSync(PUB_KEY_FILE, { encoding: "ascii" });
 
 // Session validity duration (1 hour)
 const SESSION_VALID_TIME_MS = 1000 * 60 * 60; // 1h
+
+interface UserData {
+  id: number;
+  username: string;
+  session_token: string;
+  profile_image: string | null; // Convert BLOB to Base64 string or null
+  created_at: string; // Use ISO string for dates
+  updated_at: string; // Use ISO string for dates
+}
 
 // Connect to the database and log the result
 DB.connect((err) => {
@@ -44,7 +53,7 @@ DB.connect((err) => {
  * @param {string} password - The password of the new user.
  * @returns {Promise<{ status: number; message: string }>} The result of the registration.
  */
-export async function Register(username: string, password: string) {
+export async function Register(username: string, password: string): Promise<{ status: number; message: string; }> {
   try {
     if (!username || !password) {
       Logger({ status: "WARN", message: "Username and password are required" });
@@ -88,7 +97,7 @@ export async function Register(username: string, password: string) {
  * @param {string} password - The password of the user trying to log in.
  * @returns {Promise<{ status: number; message: string; token?: string }>} The result of the login attempt, including a token if successful.
  */
-export async function Login(username: string, password: string) {
+export async function Login(username: string, password: string): Promise<{ status: number; message: string; token?: string; }> {
   try {
     if (!username || !password) {
       Logger({ status: "WARN", message: "Username and password are required" });
@@ -190,18 +199,15 @@ export async function getSessionCookie(): Promise<string | null> {
  * Checks if the user's session is valid.
  * 
  * @param {string} username - The username of the user.
- * @param {string | null} [sessionToken] - The session token (optional). If not provided, it will be retrieved from cookies.
  * @returns {Promise<boolean>} True if the session is valid, false otherwise.
  */
-export async function isSessionValid(username: string, sessionToken?: string | null): Promise<boolean> {
+export async function isSessionValid(username: string): Promise<boolean> {
   try {
     if (!username) {
       Logger({ status: "WARN", message: "Username is required" });
       return false;
     }
-    if (!sessionToken) {
-      sessionToken = await getSessionCookie();
-    }
+      const sessionToken = await getSessionCookie();
 
     if (!sessionToken) {
       Logger({ status: "WARN", message: "Session token is missing" });
@@ -261,30 +267,27 @@ export async function isSessionValid(username: string, sessionToken?: string | n
 
 /**
  * Retrieves the username associated with a given session token.
- * 
- * @param {string} token - The session token.
- * @returns {Promise<string | null>} The username associated with the session token, or null if not found.
+ * @returns {Promise<any[id: number, session_token: string, profile_image: BLOB, created_at: Date, updated_at: Date] | null>} The username associated with the session token, or null if not found.
  */
-export async function getUserBySessionToken(token: string): Promise<string | null> {
-  const sql = "SELECT username FROM users WHERE session_token = ?";
+export async function getUserData(): Promise<UserData | null> {
+  const sql = "SELECT id, username, session_token, profile_image, created_at, updated_at FROM users WHERE session_token = ?";
+  const token = await getSessionCookie();
   const values = [token];
 
   try {
-    const result: { username: string }[] = await new Promise(
-      (resolve, reject) => {
-        DB.query(sql, values, (err, result) => {
-          if (err) {
-            Logger({
-              status: "ERROR",
-              message: `Database query error: ${err.message}`,
-            });
-            reject(err);
-          } else {
-            resolve(result as { username: string }[]);
-          }
-        });
-      },
-    );
+    const result: UserData[] = await new Promise((resolve, reject) => {
+      DB.query(sql, values, (err, result) => {
+        if (err) {
+          Logger({
+            status: "ERROR",
+            message: `Database query error: ${err.message}`,
+          });
+          reject(err);
+        } else {
+          resolve(result as UserData[]);
+        }
+      });
+    });
 
     if (result.length === 0) {
       Logger({
@@ -293,7 +296,13 @@ export async function getUserBySessionToken(token: string): Promise<string | nul
       });
       return null;
     } else {
-      return result[0].username;
+      const user = result[0];
+      return {
+        ...user,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        profile_image: user.profile_image ? atob(user.profile_image ): null, // Konvertiere BLOB in Base64-String
+      };
     }
   } catch (error) {
     Logger({

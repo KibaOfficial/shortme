@@ -3,9 +3,9 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 import { NextRequest, NextResponse } from "next/server";
-import { Login } from "@/utils/api";
+import { Login } from "@/lib/api";
 import { serialize } from "cookie";
-import Logger from "@/utils/logger";
+import Logger from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {

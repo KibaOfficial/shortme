@@ -4,7 +4,7 @@
 // https://opensource.org/licenses/MIT
 
 import { NextRequest, NextResponse } from 'next/server';
-import { Register } from '@/utils/api';
+import { Register } from '@/lib/api';
 
 
 export async function POST(request: NextRequest) {

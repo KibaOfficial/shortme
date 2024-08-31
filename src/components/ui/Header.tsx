@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { FiMenu, FiX } from "react-icons/fi";
-import Logger from "@/utils/logger";
+import Logger from "@/lib/logger";
 
 const Header: React.FC = () => {
   const pathname = usePathname();
