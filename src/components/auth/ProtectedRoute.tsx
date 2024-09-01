@@ -6,16 +6,13 @@
 import { useCookies } from "react-cookie";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getUserData, isSessionValid } from "@/lib/api";
+import { isSessionValid } from "@/lib/api";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  children
-}) => {
-
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [isSessionValidState, setIsSessionValidState] = useState<boolean | null>(null);
   const router = useRouter();
   const [cookies] = useCookies(['session_token']);
@@ -30,21 +27,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           return;
         }
 
-        const userData = await getUserData();
-        if (!userData) {
-          setIsSessionValidState(false);
-          router.push("/auth");
-          return;
-        }
-        const username = userData[0]
-        if (username === null) {
-          setIsSessionValidState(false);
-          router.push("/auth");
-          return;
-        }
+        const isValid = await isSessionValid(token);
+        setIsSessionValidState(isValid);
 
-        const valid = await isSessionValid(username)
-        setIsSessionValidState(valid);
+        if (!isValid) {
+          router.push("/auth");
+        }
       } catch (error) {
         console.error(error);
         setIsSessionValidState(false);
@@ -53,17 +41,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     };
 
     checkSession();
-      }, [cookies, router]);
+  }, [cookies, router]);
 
-      if (isSessionValidState === null) {
-        return <div>Loading...</div>
-      }
+  if (isSessionValidState === null) {
+    return <div>Loading...</div>;
+  }
 
-      if (!isSessionValidState) {
-        return null;
-      }
-
-      return <>{children}</>
-    }
+  return isSessionValidState ? <>{children}</> : null;
+};
 
 export default ProtectedRoute;

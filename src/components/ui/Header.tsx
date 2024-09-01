@@ -1,18 +1,23 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { FiMenu, FiX } from "react-icons/fi";
 import Logger from "@/lib/logger";
+import Cookies from "js-cookie";
 
 const Header: React.FC = () => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDashboardUi, setIsDashboardUi] = useState(false);
+  const [error, setError] = useState('');
+  const [valid, setValid] = useState(false);
   const activeLink = "block py-2 px-4 rounded-md bg-blue-800 text-white";
   const inactiveLink = "py-2 rounded-md";
+
+  const router = useRouter()
 
   useEffect(() => {
     setIsDashboardUi(pathname.startsWith("/dashboard"));
@@ -22,7 +27,31 @@ const Header: React.FC = () => {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  Logger({ status: 'INFO', message: `Current path: ${pathname}`})
+  Logger({ status: "INFO", message: `Current path: ${pathname}` });
+
+  const logoutHandler = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: "include"
+      });
+
+      if (response.ok) {
+        Cookies.remove('session_token');
+        router.push('/auth');
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Logout failed');
+      }
+    } catch (error) {
+      Logger({ status: "ERROR", message: `${error}` });
+      setError('Logout failed');
+    }
+  };
+
 
   return (
     <div className="bg-gray-900 text-white top-0 z-50">
@@ -68,19 +97,31 @@ const Header: React.FC = () => {
                   <FiX size={24} />
                 </button>
                 <ul className="space-y-4">
+                  {error && <li className="text-red-500">{error}</li>}
                   <li>
                     <Link href="/" legacyBehavior>
-                      <a className={pathname === "/" ? activeLink : inactiveLink} >
+                      <a
+                        className={pathname === "/" ? activeLink : inactiveLink}
+                      >
                         Home
                       </a>
                     </Link>
                   </li>
                   <li>
                     <Link href="/dashboard" legacyBehavior>
-                      <a className={pathname === "/dashboard" ? activeLink : inactiveLink}>
+                      <a
+                        className={
+                          pathname === "/dashboard" ? activeLink : inactiveLink
+                        }
+                      >
                         Dashboard
                       </a>
                     </Link>
+                  </li>
+                  <li>
+                    <button onClick={logoutHandler}>
+                      <a className={activeLink}>Logout</a>
+                    </button>
                   </li>
                 </ul>
               </div>
