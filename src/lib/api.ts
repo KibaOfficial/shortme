@@ -10,7 +10,7 @@
 import bcrypt from "bcrypt";
 import fs from "fs";
 import jwt from "jsonwebtoken";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 
 // Import utility modules
 import DB from "@/lib/DB";
@@ -23,15 +23,16 @@ const PRIV_KEY = fs.readFileSync(PRIV_KEY_FILE, { encoding: "ascii" });
 const PUB_KEY = fs.readFileSync(PUB_KEY_FILE, { encoding: "ascii" });
 
 // Session validity duration (1 hour)
-const SESSION_VALID_TIME_MS = 1000 * 60 * 60; // 1h
+const SESSION_VALID_TIME_MS = 1000 * 60 * 60; // 1 hour
 
+// User object
 interface UserData {
   id: number;
   username: string;
   session_token: string;
-  profile_image: string | null; // Convert BLOB to Base64 string or null
-  created_at: string; // Use ISO string for dates
-  updated_at: string; // Use ISO string for dates
+  profile_image: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // Connect to the database and log the result
@@ -39,7 +40,7 @@ DB.connect((err) => {
   if (err) {
     Logger({
       status: "ERROR",
-      message: `Could not connect to database: ${err}`,
+      message: `Could not connect to database: ${err.message}`,
     });
   } else {
     Logger({ status: "INFO", message: "Connected to database" });
@@ -48,33 +49,28 @@ DB.connect((err) => {
 
 /**
  * Registers a new user in the database.
- * 
+ *
  * @param {string} username - The username of the new user.
  * @param {string} password - The password of the new user.
  * @returns {Promise<{ status: number; message: string }>} The result of the registration.
  */
-export async function Register(username: string, password: string): Promise<{ status: number; message: string; }> {
-  try {
-    if (!username || !password) {
-      Logger({ status: "WARN", message: "Username and password are required" });
-      return { status: 400, message: "Username and password are required" };
-    }
+export async function register(username: string, password: string): Promise<{ status: number; message: string }> {
+  if (!username || !password) {
+    Logger({ status: "WARN", message: "Username and password are required" });
+    return { status: 400, message: "Username and password are required" };
+  }
 
+  try {
     const hash = await bcrypt.hash(password, 10);
 
     const sql = "INSERT INTO users (username, password) VALUES (?, ?)";
-    const values = [username, hash];
-
     await new Promise<void>((resolve, reject) => {
-      DB.query(sql, values, (err) => {
+      DB.query(sql, [username, hash], (err) => {
         if (err) {
-          Logger({
-            status: "ERROR",
-            message: `Error executing query: ${err.message}`,
-          });
+          Logger({ status: "ERROR", message: `Error executing query: ${err.message}` });
           reject(err);
         } else {
-          Logger({ status: "INFO", message: `User registered: ${username}` });
+          Logger({ status: "INFO", message: `User registered successfully: ${username}` });
           resolve();
         }
       });
@@ -83,36 +79,29 @@ export async function Register(username: string, password: string): Promise<{ st
     return { status: 201, message: "User registered successfully" };
   } catch (err) {
     Logger({ status: "ERROR", message: `Error registering user: ${err}` });
-    return {
-      status: 500,
-      message: "An error occurred while registering the user",
-    };
+    return { status: 500, message: "An error occurred while registering the user" };
   }
 }
 
 /**
  * Logs in a user and returns a session token.
- * 
+ *
  * @param {string} username - The username of the user trying to log in.
  * @param {string} password - The password of the user trying to log in.
  * @returns {Promise<{ status: number; message: string; token?: string }>} The result of the login attempt, including a token if successful.
  */
-export async function Login(username: string, password: string): Promise<{ status: number; message: string; token?: string; }> {
-  try {
-    if (!username || !password) {
-      Logger({ status: "WARN", message: "Username and password are required" });
-      return { status: 400, message: "Username and password are required" };
-    }
+export async function login(username: string, password: string): Promise<{ status: number; message: string; token?: string }> {
+  if (!username || !password) {
+    Logger({ status: "WARN", message: "Username and password are required" });
+    return { status: 400, message: "Username and password are required" };
+  }
 
-    const sql =
-      "SELECT username, password, session_token FROM users WHERE username = ?";
+  try {
+    const sql = "SELECT username, password, session_token FROM users WHERE username = ?";
     const result: any[] = await new Promise<any[]>((resolve, reject) => {
       DB.query(sql, [username], (err, res) => {
         if (err) {
-          Logger({
-            status: "ERROR",
-            message: `Error executing query: ${err.message}`,
-          });
+          Logger({ status: "ERROR", message: `Error executing query: ${err.message}` });
           reject(err);
         } else {
           resolve(res);
@@ -120,17 +109,12 @@ export async function Login(username: string, password: string): Promise<{ statu
       });
     });
 
-    if (!result || result.length === 0) {
+    if (result.length === 0) {
       Logger({ status: "WARN", message: "User not found" });
       return { status: 404, message: "User not found" };
     }
 
     const user = result[0];
-    if (!user.password) {
-      Logger({ status: "ERROR", message: "User data is missing" });
-      return { status: 500, message: "User data is missing" };
-    }
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       Logger({ status: "WARN", message: "Invalid password" });
@@ -146,72 +130,100 @@ export async function Login(username: string, password: string): Promise<{ statu
     await new Promise<void>((resolve, reject) => {
       DB.query(updateSql, [token, username], (err) => {
         if (err) {
-          Logger({
-            status: "ERROR",
-            message: `Error updating session token: ${err}`,
-          });
+          Logger({ status: "ERROR", message: `Error updating session token: ${err.message}` });
           reject(err);
         } else {
-          Logger({
-            status: "INFO",
-            message: `Session token updated for user: ${username}`,
-          });
+          Logger({ status: "INFO", message: `Session token updated successfully for user: ${username}` });
           resolve();
         }
       });
     });
 
     return { status: 200, message: "Login successful", token };
-  } catch (error) {
-    Logger({ status: "ERROR", message: `Login error: ${error}` });
-    return {
-      status: 500,
-      message: "An error occurred while logging in",
-    };
+  } catch (err) {
+    Logger({ status: "ERROR", message: `Login error: ${err}` });
+    return { status: 500, message: "An error occurred while logging in" };
+  }
+}
+
+/**
+ * Logs out a user and deletes the session token.
+ * 
+ * @param {string} username
+ * @returns {Promise<{ status: number; message: string; }>}
+ */
+export async function logout(username: string): Promise<{ status: number; message: string }> {
+  if (!username) {
+    Logger({ status: "ERROR", message: "User not found" });
+    return { status: 404, message: "User not found" };
+  }
+
+  const sql = "UPDATE users SET session_token = NULL WHERE username = ?";
+  const values = [username];
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      DB.query(sql, values, (err) => {
+        if (err) {
+          Logger({ status: "ERROR", message: `Error while updating user: ${err}` });
+          reject({ status: 500, message: "Unexpected error" });
+        } else {
+          Cookies.remove('session_token');
+          resolve();
+        }
+      });
+    });
+
+    return { status: 200, message: "User logged out successfully" };
+  } catch (err) {
+    Logger({ status: "ERROR", message: `Error logging out user: ${err}` });
+    return { status: 500, message: "Unexpected error" };
   }
 }
 
 /**
  * Retrieves the session cookie from the browser.
- * 
- * @returns {Promise<string | null>} The session cookie, or null if not found.
+ *
+ * @returns {Promise<{ status: number; message: string; cookie?: string }>} The session cookie, or null if not found.
  */
-export async function getSessionCookie(): Promise<string | null> {
+export async function getSessionCookie(): Promise<{ status: number; message: string; cookie?: string;}> {
   try {
     const cookie = Cookies.get("session_token");
     if (cookie) {
       Logger({ status: "DEBUG", message: `User Session Cookie: ${cookie}` });
-      return cookie;
+      return { status: 200, message: "Session cookie found", cookie };
     } else {
       Logger({ status: "DEBUG", message: "No session cookie found." });
-      return null;
+      return { status: 404, message: "No session cookie found." };
     }
   } catch (error) {
     Logger({
       status: "ERROR",
       message: `Error retrieving session cookie: ${error}`,
     });
-    return null;
+    return {
+      status: 500,
+      message: "An error occurred while retrieving the session cookie.",
+    };
   }
 }
 
 /**
  * Checks if the user's session is valid.
- * 
- * @param {string} username - The username of the user.
- * @returns {Promise<boolean>} True if the session is valid, false otherwise.
+ * @param {string} session_token - The username of the user.
+ * @returns {Promise<{status: number;message: string;isValid: boolean;}>} True if the session is valid, false otherwise.
  */
-export async function isSessionValid(username: string): Promise<boolean> {
+export async function isSessionValid(username: string, ): Promise<{ status: number; message: string; isValid: boolean }> {
   try {
     if (!username) {
       Logger({ status: "WARN", message: "Username is required" });
-      return false;
+      return { status: 400, message: "Username is required", isValid: false };
     }
-      const sessionToken = await getSessionCookie();
-
+    
+    const { cookie: sessionToken } = await getSessionCookie();
     if (!sessionToken) {
       Logger({ status: "WARN", message: "Session token is missing" });
-      return false;
+      return { status: 401, message: "Session token is missing", isValid: false };
     }
 
     const sql = "SELECT session_token FROM users WHERE username = ?";
@@ -231,48 +243,46 @@ export async function isSessionValid(username: string): Promise<boolean> {
       });
     });
 
-    if (!result || result.length === 0) {
+    if (result.length === 0) {
       Logger({
         status: "WARN",
         message: "User not found or session token missing",
       });
-      return false;
+      return { status: 404, message: "User not found or session token missing", isValid: false };
     }
 
     const user = result[0];
     if (!user || !user.session_token) {
       Logger({ status: "WARN", message: "User session token is missing" });
-      return false;
+      return { status: 401, message: "User session token is missing", isValid: false };
     }
 
     try {
       jwt.verify(sessionToken, PUB_KEY, { algorithms: ["RS256"] });
-      Logger({
-        status: "INFO",
-        message: `Session token is valid for user: ${username}`,
-      });
-      return true;
+      Logger({ status: "INFO", message: `Session token is valid for user: ${username}` });
+      return { status: 200, message: "Session token is valid", isValid: true };
     } catch (err) {
       Logger({ status: "ERROR", message: `Invalid session token: ${err}` });
-      return false;
+      return { status: 401, message: "Invalid session token", isValid: false };
     }
   } catch (error) {
     Logger({
       status: "ERROR",
       message: `Error checking session validity: ${error}`,
     });
-    return false;
+    return { status: 500, message: "An error occurred while checking the session validity.", isValid: false };
   }
 }
 
 /**
- * Retrieves the username associated with a given session token.
- * @returns {Promise<any[id: number, session_token: string, profile_image: BLOB, created_at: Date, updated_at: Date] | null>} The username associated with the session token, or null if not found.
+ * Retrieves user data by username.
+ *
+ * @param {string} username - The username of the user.
+ * @returns {Promise<{ status: number; message: string; user: UserData | null }>} The user data.
  */
-export async function getUserData(): Promise<UserData | null> {
-  const sql = "SELECT id, username, session_token, profile_image, created_at, updated_at FROM users WHERE session_token = ?";
-  const token = await getSessionCookie();
-  const values = [token];
+export async function getUserDataByUsername(username: string): Promise<{ status: number; message: string; user: UserData | null }> {
+  const sql = "SELECT * FROM users WHERE username = ?";
+  const values = [username];
 
   try {
     const result: UserData[] = await new Promise((resolve, reject) => {
@@ -290,25 +300,70 @@ export async function getUserData(): Promise<UserData | null> {
     });
 
     if (result.length === 0) {
-      Logger({
-        status: "DEBUG",
-        message: "No user found for the given session token.",
-      });
-      return null;
-    } else {
-      const user = result[0];
-      return {
-        ...user,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        profile_image: user.profile_image ? atob(user.profile_image ): null, // Konvertiere BLOB in Base64-String
-      };
+      return { status: 404, message: "User not found", user: null };
     }
-  } catch (error) {
+
+    return {
+      status: 200,
+      message: "User data retrieved successfully",
+      user: result[0],
+    };
+  } catch (err) {
     Logger({
       status: "ERROR",
-      message: `Error retrieving user by session token: ${error}`,
+      message: `Error retrieving user data by username: ${err}`,
     });
-    return null;
+    return {
+      status: 500,
+      message: "An error occurred while retrieving user data",
+      user: null,
+    };
+  }
+}
+
+/**
+ * Retrieves user data by session token.
+ *
+ * @param {string} session_token - The session token of the user.
+ * @returns {Promise<{ status: number; message: string; user: UserData | null }>} The user data.
+ */
+export async function getUserDataBySessionToken(session_token: string): Promise<{ status: number; message: string; user: UserData | null }> {
+  const sql = "SELECT * FROM users WHERE session_token = ?";
+  const values = [session_token];
+
+  try {
+    const result: UserData[] = await new Promise((resolve, reject) => {
+      DB.query(sql, values, (err, result) => {
+        if (err) {
+          Logger({
+            status: "ERROR",
+            message: `Database query error: ${err.message}`,
+          });
+          reject(err);
+        } else {
+          resolve(result as UserData[]);
+        }
+      });
+    });
+
+    if (result.length === 0) {
+      return { status: 404, message: "No user found for the given session token.", user: null };
+    }
+
+    return {
+      status: 200,
+      message: "User data retrieved successfully",
+      user: result[0],
+    };
+  } catch (err) {
+    Logger({
+      status: "ERROR",
+      message: `Error retrieving user by session token: ${err}`,
+    });
+    return {
+      status: 500,
+      message: "An error occurred while retrieving user data",
+      user: null,
+    };
   }
 }

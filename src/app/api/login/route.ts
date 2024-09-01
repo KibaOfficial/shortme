@@ -2,10 +2,14 @@
 //
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
+
+// Libs
 import { NextRequest, NextResponse } from "next/server";
-import { Login } from "@/lib/api";
 import { serialize } from "cookie";
+
+// components
 import Logger from "@/lib/logger";
+import { login } from "@/lib/api";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +26,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await Login(username, password);
+    const response = await login(username, password);
 
     if (response.status === 200) {
       if (response.token) {

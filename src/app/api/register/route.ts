@@ -4,14 +4,14 @@
 // https://opensource.org/licenses/MIT
 
 import { NextRequest, NextResponse } from 'next/server';
-import { Register } from '@/lib/api';
+import { register } from '@/lib/api';
 
 
 export async function POST(request: NextRequest) {
   const { username, password } = await request.json();
 
   try {
-    const response = await Register(username, password);
+    const response = await register(username, password);
 
     if (response.status === 201) {
       return NextResponse.json({ message: 'User registered successfully' });

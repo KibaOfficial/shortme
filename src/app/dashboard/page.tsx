@@ -5,7 +5,7 @@
 
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
-export default async function DashboardPage() {
+const DashboardPage = () => {
   return (
     <ProtectedRoute>
       <div className="flex items-center justify-center h-screen bg-gray-900">
@@ -17,3 +17,5 @@ export default async function DashboardPage() {
     </ProtectedRoute>
   );
 }
+
+export default DashboardPage;
