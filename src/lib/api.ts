@@ -44,7 +44,10 @@ DB.connect((err) => {
  * @param {string} password - The password of the new user.
  * @returns {Promise<{ status: number; message: string }>} The result of the registration.
  */
-export async function register(username: string, password: string): Promise<{ status: number; message: string }> {
+export async function register(
+  username: string,
+  password: string
+): Promise<{ status: number; message: string }> {
   if (!username || !password) {
     Logger({ status: "WARN", message: "Username and password are required" });
     return { status: 400, message: "Username and password are required" };
@@ -57,10 +60,16 @@ export async function register(username: string, password: string): Promise<{ st
     await new Promise<void>((resolve, reject) => {
       DB.query(sql, [username, hash], (err) => {
         if (err) {
-          Logger({ status: "ERROR", message: `Error executing query: ${err.message}` });
+          Logger({
+            status: "ERROR",
+            message: `Error executing query: ${err.message}`,
+          });
           reject(err);
         } else {
-          Logger({ status: "INFO", message: `User registered successfully: ${username}` });
+          Logger({
+            status: "INFO",
+            message: `User registered successfully: ${username}`,
+          });
           resolve();
         }
       });
@@ -69,7 +78,10 @@ export async function register(username: string, password: string): Promise<{ st
     return { status: 201, message: "User registered successfully" };
   } catch (err) {
     Logger({ status: "ERROR", message: `Error registering user: ${err}` });
-    return { status: 500, message: "An error occurred while registering the user" };
+    return {
+      status: 500,
+      message: "An error occurred while registering the user",
+    };
   }
 }
 
@@ -80,18 +92,25 @@ export async function register(username: string, password: string): Promise<{ st
  * @param {string} password - The password of the user trying to log in.
  * @returns {Promise<{ status: number; message: string; token?: string }>} The result of the login attempt, including a token if successful.
  */
-export async function login(username: string, password: string): Promise<{ status: number; message: string; token?: string }> {
+export async function login(
+  username: string,
+  password: string
+): Promise<{ status: number; message: string; token?: string }> {
   if (!username || !password) {
     Logger({ status: "WARN", message: "Username and password are required" });
     return { status: 400, message: "Username and password are required" };
   }
 
   try {
-    const sql = "SELECT username, password, session_token FROM users WHERE username = ?";
+    const sql =
+      "SELECT username, password, session_token FROM users WHERE username = ?";
     const result: any[] = await new Promise<any[]>((resolve, reject) => {
       DB.query(sql, [username], (err, res) => {
         if (err) {
-          Logger({ status: "ERROR", message: `Error executing query: ${err.message}` });
+          Logger({
+            status: "ERROR",
+            message: `Error executing query: ${err.message}`,
+          });
           reject(err);
         } else {
           resolve(res);
@@ -105,13 +124,17 @@ export async function login(username: string, password: string): Promise<{ statu
     }
 
     const user = result[0];
+    if (!user) {
+      Logger({ status: "ERROR", message: "User not found" });
+      return { status: 404, message: "User not found" };
+    }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       Logger({ status: "WARN", message: "Invalid password" });
       return { status: 401, message: "Invalid password" };
     }
 
-    const token = jwt.sign({ userid: user.username }, PRIV_KEY, {
+    const token = jwt.sign({ userid: user.id }, PRIV_KEY, {
       algorithm: "RS256",
       expiresIn: SESSION_VALID_TIME_MS / 1000,
     });
@@ -120,10 +143,16 @@ export async function login(username: string, password: string): Promise<{ statu
     await new Promise<void>((resolve, reject) => {
       DB.query(updateSql, [token, username], (err) => {
         if (err) {
-          Logger({ status: "ERROR", message: `Error updating session token: ${err.message}` });
+          Logger({
+            status: "ERROR",
+            message: `Error updating session token: ${err.message}`,
+          });
           reject(err);
         } else {
-          Logger({ status: "INFO", message: `Session token updated successfully for user: ${username}` });
+          Logger({
+            status: "INFO",
+            message: `Session token updated successfully for user: ${username}`,
+          });
           resolve();
         }
       });
@@ -138,11 +167,13 @@ export async function login(username: string, password: string): Promise<{ statu
 
 /**
  * Logs out a user and deletes the session token.
- * 
+ *
  * @param {string} username
  * @returns {Promise<{ status: number; message: string; }>}
  */
-export async function logout(username: string): Promise<{ status: number; message: string }> {
+export async function logout(
+  username: string
+): Promise<{ status: number; message: string }> {
   if (!username) {
     Logger({ status: "ERROR", message: "User not found" });
     return { status: 404, message: "User not found" };
@@ -155,10 +186,13 @@ export async function logout(username: string): Promise<{ status: number; messag
     await new Promise<void>((resolve, reject) => {
       DB.query(sql, values, (err) => {
         if (err) {
-          Logger({ status: "ERROR", message: `Error while updating user: ${err}` });
+          Logger({
+            status: "ERROR",
+            message: `Error while updating user: ${err}`,
+          });
           reject({ status: 500, message: "Unexpected error" });
         } else {
-          Cookies.remove('session_token');
+          Cookies.remove("session_token");
           resolve();
         }
       });
@@ -176,9 +210,14 @@ export async function logout(username: string): Promise<{ status: number; messag
  *
  * @returns {Promise<{ status: number; message: string; cookie?: string }>} The session cookie, or null if not found.
  */
-export async function getSessionCookie(): Promise<{ status: number; message: string; cookie?: string;}> {
+export async function getSessionCookie(): Promise<{
+  status: number;
+  message: string;
+  cookie?: string;
+}> {
   try {
     const cookie = Cookies.get("session_token");
+    Logger({ status: "DEBUG", message: `User Session Cookie: ${cookie}` });
     if (cookie) {
       Logger({ status: "DEBUG", message: `User Session Cookie: ${cookie}` });
       return { status: 200, message: "Session cookie found", cookie };
@@ -203,11 +242,17 @@ export async function getSessionCookie(): Promise<{ status: number; message: str
  * @param {string} session_token - The session token of the user.
  * @returns {Promise<{status: number; message: string; isValid: boolean;}>} True if the session is valid, false otherwise.
  */
-export async function isSessionValid(session_token: string): Promise<{ status: number; message: string; isValid: boolean }> {
+export async function isSessionValid(
+  session_token: string
+): Promise<{ status: number; message: string; isValid: boolean }> {
   try {
     if (!session_token) {
       Logger({ status: "WARN", message: "Session token is required" });
-      return { status: 400, message: "Session token is required", isValid: false };
+      return {
+        status: 400,
+        message: "Session token is required",
+        isValid: false,
+      };
     }
 
     const sql = "SELECT session_token FROM users WHERE session_token = ?";
@@ -232,7 +277,11 @@ export async function isSessionValid(session_token: string): Promise<{ status: n
         status: "WARN",
         message: "Session token not found or invalid",
       });
-      return { status: 404, message: "Session token not found or invalid", isValid: false };
+      return {
+        status: 404,
+        message: "Session token not found or invalid",
+        isValid: false,
+      };
     }
 
     const user = result[0];
@@ -249,6 +298,141 @@ export async function isSessionValid(session_token: string): Promise<{ status: n
       status: "ERROR",
       message: `Error checking session validity: ${error}`,
     });
-    return { status: 500, message: "An error occurred while checking the session validity.", isValid: false };
+    return {
+      status: 500,
+      message: "An error occurred while checking the session validity.",
+      isValid: false,
+    };
+  }
+}
+
+/**
+ * Creates a short link in the database.
+ * @param {string} code - The short code.
+ * @param {string} origin - The origin URL.
+ * @param {string} user_id - The ID of the user creating the short link.
+ * @returns {Promise<{status: number; message: string;}>} A status and message indicating success or failure.
+ */
+export async function createShort(
+  code: string,
+  origin: string,
+  user_id: number
+): Promise<{ status: number; message: string }> {
+  const sql = "INSERT INTO links (code, origin, user_id) VALUES (?, ?, ?)";
+  const values = [code, origin, user_id];
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      DB.query(sql, values, (err) => {
+        if (err) {
+          Logger({
+            status: "ERROR",
+            message: `Error while creating short link: ${err.message}`,
+          });
+
+          if (err.code === "ER_DUP_ENTRY") {
+            reject({ status: 409, message: "Short code already exists" });
+          } else {
+            reject({ status: 500, message: "Unexpected error" });
+          }
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    return { status: 201, message: "Short link created successfully" };
+  } catch (err) {
+    Logger({
+      status: "ERROR",
+      message: `Error in createShort: ${err}`,
+    });
+    return { status: 500, message: "Unexpected error" };
+  }
+}
+
+/**
+ * Queries the database for the user id using the session token
+ * @param {string} token - Session Token
+ * @returns {Promise<{ status: number; message: string; id: number | null }>}
+ */
+export async function getUserIdBySessionToken(
+  token: string
+): Promise<{ status: number; message: string; id: number | null }> {
+  const sql = "SELECT id FROM users WHERE session_token = ?";
+  const values = [token];
+
+  try {
+    const result = await new Promise<any[]>((resolve, reject) => {
+      DB.query(sql, values, (err, res) => {
+        if (err) {
+          Logger({
+            status: "ERROR",
+            message: `Error executing query: ${err.message}`,
+          });
+          reject({ status: 500, message: "Unexpected error" });
+        } else {
+          resolve(res);
+        }
+      });
+    });
+
+    if (result.length === 0) {
+      Logger({ status: "WARN", message: "User ID not found" });
+      return { status: 404, message: "User ID not found", id: null };
+    }
+
+    return { status: 200, message: "User ID found", id: result[0].id };
+  } catch (err) {
+    Logger({
+      status: "ERROR",
+      message: `Error in getUserIdBySessionToken: ${err}`,
+    });
+    return { status: 500, message: "Unexpected error", id: null };
+  }
+}
+
+/**
+ * Queries the database for the URL using the short code of the pathname
+ * @param {string} code - Short code from the page path
+ * @returns {Promise<{ status: number; message: string; link: URL | null }>}
+ */
+export async function getLinkByCode(
+  code: string
+): Promise<{ status: number; message: string; origin: URL | null }> {
+  const sql = "SELECT origin FROM links WHERE code = ?";
+  const values = [code];
+
+  try {
+    const result = await new Promise<any[]>((resolve, reject) => {
+      DB.query(sql, values, (err, res) => {
+        if (err) {
+          Logger({
+            status: "ERROR",
+            message: `Error executing query: ${err.message}`,
+          });
+          reject({ status: 500, message: "Unexpected error", origin: null });
+        } else {
+          resolve(res);
+        }
+      });
+    });
+
+    if (result.length === 0) {
+      Logger({ status: "WARN", message: "Link not found" });
+      return { status: 404, message: "Link not found", origin: null };
+    }
+
+    return {
+      status: 200,
+      message: "Link found",
+      origin: new URL(result[0].origin),
+    };
+  } catch (err) {
+    Logger({
+      status: "ERROR",
+      message: `Error in getLinkByCode: ${err}`,
+    });
+    return { status: 500, message: "Unexpected error", origin: null };
   }
 }
