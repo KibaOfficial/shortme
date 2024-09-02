@@ -1,12 +1,10 @@
 // Copyright (c) 2024 KibaOfficial
-// 
+//
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
-"use client"
-import { useCookies } from "react-cookie";
+"use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { isSessionValid } from "@/lib/api";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,33 +13,28 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [isSessionValidState, setIsSessionValidState] = useState<boolean | null>(null);
   const router = useRouter();
-  const [cookies] = useCookies(['session_token']);
 
   useEffect(() => {
-    const checkSession = async () => {
+    const verifySession = async () => {
       try {
-        const token = cookies['session_token'];
-        if (!token) {
+        const response = await fetch('/api/verify-session', { method: 'POST' });
+        const data = await response.json();
+
+        if (response.status === 200 && data.isValid) {
+          setIsSessionValidState(true);
+        } else {
           setIsSessionValidState(false);
-          router.push("/auth");
-          return;
+          router.push('/auth');
         }
-
-        const isValid = await isSessionValid(token);
-        setIsSessionValidState(isValid);
-
-        if (!isValid) {
-          router.push("/auth");
-        }
-      } catch (error) {
-        console.error(error);
+      } catch (err) {
+        console.error("Error verifying session:", err);
         setIsSessionValidState(false);
-        router.push("/auth");
+        router.push('/auth');
       }
     };
 
-    checkSession();
-  }, [cookies, router]);
+    verifySession();
+  }, [router]);
 
   if (isSessionValidState === null) {
     return <div>Loading...</div>;
