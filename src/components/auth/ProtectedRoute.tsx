@@ -1,63 +1,46 @@
 // Copyright (c) 2024 KibaOfficial
-// 
+//
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
-"use client"
-import { useCookies } from "react-cookie";
+"use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getUserBySessionToken, isSessionValid } from "@/utils/api";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  children
-}) => {
-
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [isSessionValidState, setIsSessionValidState] = useState<boolean | null>(null);
   const router = useRouter();
-  const [cookies] = useCookies(['session_token']);
 
   useEffect(() => {
-    const checkSession = async () => {
+    const verifySession = async () => {
       try {
-        const token = cookies['session_token'];
-        if (!token) {
-          setIsSessionValidState(false);
-          router.push("/auth");
-          return;
-        }
+        const response = await fetch('/api/verify-session', { method: 'POST' });
+        const data = await response.json();
 
-        const username = await getUserBySessionToken(token);
-        if (username === null) {
+        if (response.status === 200 && data.isValid) {
+          setIsSessionValidState(true);
+        } else {
           setIsSessionValidState(false);
-          router.push("/auth");
-          return;
+          router.push('/auth');
         }
-
-        const valid = await isSessionValid(username, token)
-        setIsSessionValidState(valid);
-      } catch (error) {
-        console.error(error);
+      } catch (err) {
+        console.error("Error verifying session:", err);
         setIsSessionValidState(false);
-        router.push("/auth");
+        router.push('/auth');
       }
     };
 
-    checkSession();
-      }, [cookies, router]);
+    verifySession();
+  }, [router]);
 
-      if (isSessionValidState === null) {
-        return <div>Loading...</div>
-      }
+  if (isSessionValidState === null) {
+    return <div>Loading...</div>;
+  }
 
-      if (!isSessionValidState) {
-        return null;
-      }
-
-      return <>{children}</>
-    }
+  return isSessionValidState ? <>{children}</> : null;
+};
 
 export default ProtectedRoute;
