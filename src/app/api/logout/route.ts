@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       headers.append(
         'Set-Cookie',
         serialize("session_token", '', {
-          httpOnly: false,
+          httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           maxAge: 60 * 60 * 24 * 7,
           sameSite: "strict",

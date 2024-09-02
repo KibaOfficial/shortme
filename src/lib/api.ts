@@ -25,16 +25,6 @@ const PUB_KEY = fs.readFileSync(PUB_KEY_FILE, { encoding: "ascii" });
 // Session validity duration (1 hour)
 const SESSION_VALID_TIME_MS = 1000 * 60 * 60; // 1 hour
 
-// User object
-interface UserData {
-  id: number;
-  username: string;
-  session_token: string;
-  profile_image: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 // Connect to the database and log the result
 DB.connect((err) => {
   if (err) {
@@ -210,24 +200,18 @@ export async function getSessionCookie(): Promise<{ status: number; message: str
 
 /**
  * Checks if the user's session is valid.
- * @param {string} session_token - The username of the user.
- * @returns {Promise<{status: number;message: string;isValid: boolean;}>} True if the session is valid, false otherwise.
+ * @param {string} session_token - The session token of the user.
+ * @returns {Promise<{status: number; message: string; isValid: boolean;}>} True if the session is valid, false otherwise.
  */
-export async function isSessionValid(username: string, ): Promise<{ status: number; message: string; isValid: boolean }> {
+export async function isSessionValid(session_token: string): Promise<{ status: number; message: string; isValid: boolean }> {
   try {
-    if (!username) {
-      Logger({ status: "WARN", message: "Username is required" });
-      return { status: 400, message: "Username is required", isValid: false };
-    }
-    
-    const { cookie: sessionToken } = await getSessionCookie();
-    if (!sessionToken) {
-      Logger({ status: "WARN", message: "Session token is missing" });
-      return { status: 401, message: "Session token is missing", isValid: false };
+    if (!session_token) {
+      Logger({ status: "WARN", message: "Session token is required" });
+      return { status: 400, message: "Session token is required", isValid: false };
     }
 
-    const sql = "SELECT session_token FROM users WHERE username = ?";
-    const values = [username];
+    const sql = "SELECT session_token FROM users WHERE session_token = ?";
+    const values = [session_token];
 
     const result = await new Promise<any[]>((resolve, reject) => {
       DB.query(sql, values, (err, res) => {
@@ -246,20 +230,15 @@ export async function isSessionValid(username: string, ): Promise<{ status: numb
     if (result.length === 0) {
       Logger({
         status: "WARN",
-        message: "User not found or session token missing",
+        message: "Session token not found or invalid",
       });
-      return { status: 404, message: "User not found or session token missing", isValid: false };
+      return { status: 404, message: "Session token not found or invalid", isValid: false };
     }
 
     const user = result[0];
-    if (!user || !user.session_token) {
-      Logger({ status: "WARN", message: "User session token is missing" });
-      return { status: 401, message: "User session token is missing", isValid: false };
-    }
-
     try {
-      jwt.verify(sessionToken, PUB_KEY, { algorithms: ["RS256"] });
-      Logger({ status: "INFO", message: `Session token is valid for user: ${username}` });
+      jwt.verify(user.session_token, PUB_KEY, { algorithms: ["RS256"] });
+      Logger({ status: "INFO", message: `Session token is valid` });
       return { status: 200, message: "Session token is valid", isValid: true };
     } catch (err) {
       Logger({ status: "ERROR", message: `Invalid session token: ${err}` });
@@ -271,99 +250,5 @@ export async function isSessionValid(username: string, ): Promise<{ status: numb
       message: `Error checking session validity: ${error}`,
     });
     return { status: 500, message: "An error occurred while checking the session validity.", isValid: false };
-  }
-}
-
-/**
- * Retrieves user data by username.
- *
- * @param {string} username - The username of the user.
- * @returns {Promise<{ status: number; message: string; user: UserData | null }>} The user data.
- */
-export async function getUserDataByUsername(username: string): Promise<{ status: number; message: string; user: UserData | null }> {
-  const sql = "SELECT * FROM users WHERE username = ?";
-  const values = [username];
-
-  try {
-    const result: UserData[] = await new Promise((resolve, reject) => {
-      DB.query(sql, values, (err, result) => {
-        if (err) {
-          Logger({
-            status: "ERROR",
-            message: `Database query error: ${err.message}`,
-          });
-          reject(err);
-        } else {
-          resolve(result as UserData[]);
-        }
-      });
-    });
-
-    if (result.length === 0) {
-      return { status: 404, message: "User not found", user: null };
-    }
-
-    return {
-      status: 200,
-      message: "User data retrieved successfully",
-      user: result[0],
-    };
-  } catch (err) {
-    Logger({
-      status: "ERROR",
-      message: `Error retrieving user data by username: ${err}`,
-    });
-    return {
-      status: 500,
-      message: "An error occurred while retrieving user data",
-      user: null,
-    };
-  }
-}
-
-/**
- * Retrieves user data by session token.
- *
- * @param {string} session_token - The session token of the user.
- * @returns {Promise<{ status: number; message: string; user: UserData | null }>} The user data.
- */
-export async function getUserDataBySessionToken(session_token: string): Promise<{ status: number; message: string; user: UserData | null }> {
-  const sql = "SELECT * FROM users WHERE session_token = ?";
-  const values = [session_token];
-
-  try {
-    const result: UserData[] = await new Promise((resolve, reject) => {
-      DB.query(sql, values, (err, result) => {
-        if (err) {
-          Logger({
-            status: "ERROR",
-            message: `Database query error: ${err.message}`,
-          });
-          reject(err);
-        } else {
-          resolve(result as UserData[]);
-        }
-      });
-    });
-
-    if (result.length === 0) {
-      return { status: 404, message: "No user found for the given session token.", user: null };
-    }
-
-    return {
-      status: 200,
-      message: "User data retrieved successfully",
-      user: result[0],
-    };
-  } catch (err) {
-    Logger({
-      status: "ERROR",
-      message: `Error retrieving user by session token: ${err}`,
-    });
-    return {
-      status: 500,
-      message: "An error occurred while retrieving user data",
-      user: null,
-    };
   }
 }

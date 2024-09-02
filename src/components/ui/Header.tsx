@@ -13,7 +13,6 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDashboardUi, setIsDashboardUi] = useState(false);
   const [error, setError] = useState('');
-  const [valid, setValid] = useState(false);
   const activeLink = "block py-2 px-4 rounded-md bg-blue-800 text-white";
   const inactiveLink = "py-2 rounded-md";
 
@@ -31,7 +30,7 @@ const Header: React.FC = () => {
 
   const logoutHandler = async () => {
     try {
-      const response = await fetch("/api/auth/logout", {
+      const response = await fetch("/api/logout", {
         method: "POST",
         headers: {
           'Content-Type': 'application/json'
