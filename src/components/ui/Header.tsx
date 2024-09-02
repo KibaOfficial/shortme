@@ -16,17 +16,18 @@ const Header: React.FC = () => {
   const activeLink = "block py-2 px-4 rounded-md bg-blue-800 text-white";
   const inactiveLink = "py-2 rounded-md";
 
-  const router = useRouter()
+  const router = useRouter();
 
   useEffect(() => {
     setIsDashboardUi(pathname.startsWith("/dashboard"));
   }, [pathname]);
 
-  const isAuthPage = pathname.startsWith("/auth");
+  useEffect(() => {
+    Logger({ status: "INFO", message: `Current path: ${pathname}` });
+  }, [pathname]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-
-  Logger({ status: "INFO", message: `Current path: ${pathname}` });
+  const isAuthPage = pathname.startsWith("/auth");
 
   const logoutHandler = async () => {
     try {
@@ -51,21 +52,18 @@ const Header: React.FC = () => {
     }
   };
 
-
   return (
     <div className="bg-gray-900 text-white top-0 z-50">
       <div className="container mx-auto flex justify-between items-center py-4">
         <div className="flex items-center">
-          <Link href="/" legacyBehavior>
-            <a className="flex items-center">
-              <Image
-                src="/logo.jpeg"
-                alt="ShortMe logo"
-                width={40}
-                height={40}
-              />
-              <h1 className="text-xl font-semibold ml-2">ShortMe</h1>
-            </a>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo.jpeg"
+              alt="ShortMe logo"
+              width={40}
+              height={40}
+            />
+            <h1 className="text-xl font-semibold ml-2">ShortMe</h1>
           </Link>
         </div>
         {isDashboardUi ? (
@@ -98,28 +96,18 @@ const Header: React.FC = () => {
                 <ul className="space-y-4">
                   {error && <li className="text-red-500">{error}</li>}
                   <li>
-                    <Link href="/" legacyBehavior>
-                      <a
-                        className={pathname === "/" ? activeLink : inactiveLink}
-                      >
-                        Home
-                      </a>
+                    <Link href="/" className={pathname === "/" ? activeLink : inactiveLink}>
+                      Home
                     </Link>
                   </li>
                   <li>
-                    <Link href="/dashboard" legacyBehavior>
-                      <a
-                        className={
-                          pathname === "/dashboard" ? activeLink : inactiveLink
-                        }
-                      >
-                        Dashboard
-                      </a>
+                    <Link href="/dashboard" className={pathname === "/dashboard" ? activeLink : inactiveLink}>
+                      Dashboard
                     </Link>
                   </li>
                   <li>
-                    <button onClick={logoutHandler}>
-                      <a className={activeLink}>Logout</a>
+                    <button onClick={logoutHandler} className={activeLink}>
+                      Logout
                     </button>
                   </li>
                 </ul>
@@ -130,29 +118,13 @@ const Header: React.FC = () => {
           <nav>
             <ul className="flex space-x-4 items-center">
               <li>
-                <Link href="/" legacyBehavior>
-                  <a
-                    className={
-                      pathname === "/"
-                        ? "bg-blue-800 text-white font-semibold py-2 px-2 rounded-md"
-                        : "py-2 px-2 rounded-md text-gray-300"
-                    }
-                  >
-                    Home
-                  </a>
+                <Link href="/" className={pathname === "/" ? "bg-blue-800 text-white font-semibold py-2 px-2 rounded-md" : "py-2 px-2 rounded-md text-gray-300"}>
+                  Home
                 </Link>
               </li>
               <li>
-                <Link href="/auth" legacyBehavior>
-                  <a
-                    className={
-                      isAuthPage
-                        ? "bg-blue-800 text-white font-semibold py-2 px-2 rounded-md"
-                        : "py-2 px-2 rounded-md text-gray-300"
-                    }
-                  >
-                    Auth
-                  </a>
+                <Link href="/auth" className={isAuthPage ? "bg-blue-800 text-white font-semibold py-2 px-2 rounded-md" : "py-2 px-2 rounded-md text-gray-300"}>
+                  Auth
                 </Link>
               </li>
             </ul>
