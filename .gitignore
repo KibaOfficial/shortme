@@ -3,6 +3,9 @@
 # ignore env
 .env
 
+# ignore idx stuff
+.idx
+
 # ignore backup
 backup/
 
