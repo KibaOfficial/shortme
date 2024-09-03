@@ -5,7 +5,7 @@
 "use client"
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { getLinkByCode } from "@/lib/api";
+import { addClick, getLinkByCode } from "@/lib/api";
 
 const RedirectPage: React.FC = () => {
   const router = useRouter();
@@ -25,6 +25,7 @@ const RedirectPage: React.FC = () => {
         }
 
         if (origin) {
+          await addClick(code);
           router.replace(origin.toString());
         }
       } catch (error) {
