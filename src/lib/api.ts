@@ -399,7 +399,7 @@ export async function getUserIdBySessionToken(
  */
 export async function getLinkByCode(
   code: string
-): Promise<{ status: number; message: string; origin: URL | null }> {
+): Promise<{ status: number; message: string; origin: string | null }> {
   const sql = "SELECT origin FROM links WHERE code = ?";
   const values = [code];
 
@@ -426,7 +426,7 @@ export async function getLinkByCode(
     return {
       status: 200,
       message: "Link found",
-      origin: new URL(result[0].origin),
+      origin: result[0].origin
     };
   } catch (err) {
     Logger({
@@ -434,5 +434,38 @@ export async function getLinkByCode(
       message: `Error in getLinkByCode: ${err}`,
     });
     return { status: 500, message: "Unexpected error", origin: null };
+  }
+}
+
+/**
+ * 
+ * @param {string} code - Code of the shortened url
+ * @returns {Promise<{ status: number; message: string;}>}
+ */
+export async function addClick(code: string): Promise<{ status: number, message: string}> {
+  const sql = 'UPDATE links SET click_count = click_count + 1 WHERE code = ?';
+  const values = [code];
+
+  try {
+    const result = await new Promise<any>((resolve, reject) => {
+      DB.query(sql, values, (err, res) => {
+        if (err) {
+          Logger({ status: 'ERROR', message: `SQL error: ${JSON.stringify(err)}` });
+          reject({ status: 500, message: 'Unexpected error' });
+        } else {
+          resolve(res);
+        }
+      });
+    });
+
+    if (result.affectedRows === 0) {
+      Logger({ status: 'WARN', message: 'Link not found' });
+      return { status: 404, message: 'Link not found' };
+    }
+
+    return { status: 200, message: 'Link found and updated' };
+  } catch (error) {
+    Logger({ status: 'ERROR', message: `Error in addClick: ${JSON.stringify(error)}` });
+    return { status: 500, message: 'Unexpected error' };
   }
 }
