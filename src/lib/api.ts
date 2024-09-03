@@ -329,6 +329,10 @@ export async function createShort(
             status: "ERROR",
             message: `Error while creating short link: ${err.message}`,
           });
+          Logger({
+            status: "ERROR",
+            message: `Error code: ${err.code}`,
+          });
 
           if (err.code === "ER_DUP_ENTRY") {
             reject({ status: 409, message: "Short code already exists" });

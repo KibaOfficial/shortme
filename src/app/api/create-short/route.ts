@@ -3,7 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import { createShort, getSessionCookie, getUserIdBySessionToken } from "@/lib/api";
+import { createShort, getUserIdBySessionToken } from "@/lib/api";
 import Logger from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 

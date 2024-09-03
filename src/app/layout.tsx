@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
 import "./globals.css";
 
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ShortMe - URL shortener",
     description: "ShortMe is a free URL shortener that allows you to shorten your long URLs into short, easy-to-share links.",
-    url: baseUrl, 
+    url: baseUrl,
     type: 'website',
     images: [
       {
@@ -26,13 +26,16 @@ export const metadata: Metadata = {
         alt: 'ShortMe - URL shortener',
       },
     ],
+    locale: "en_US",
+    siteName: "ShortMe",
   },
 
   twitter: {
     card: 'summary_large_image',
     title: "ShortMe - URL shortener",
     description: "ShortMe is a free URL shortener that allows you to shorten your long URLs into short, easy-to-share links.",
-    site: '@your_twitter_handle', 
+    site: '@KibaOfficialOwO',
+    creator: '@KibaOfficialOwO',
     images: [
       `${baseUrl}/images/twitter-image.png`,
     ],
@@ -45,7 +48,26 @@ export const metadata: Metadata = {
       name: "KibaOfficial",
       url: "https://github.com/KibaOfficial",
     },
-  ]
+  ],
+  creator: "KibaOfficial",
+  applicationName: "ShortMe",
+  manifest: `${baseUrl}/site.webmanifest`,
+  icons: [
+    {
+      rel: "icon",
+      url: `${baseUrl}/favicon.ico`,
+      type: "image/x-icon",
+    },
+    {
+      rel: "apple-touch-icon",
+      url: `${baseUrl}/apple-touch-icon.png`,
+      sizes: "180x180",
+    },
+  ],
+};
+
+export const viewport: Viewport = {
+  themeColor: "#317EFB",
 };
 
 export default function RootLayout({

@@ -2,7 +2,9 @@
 // 
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
+
 "use client"
+
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { addClick, getLinkByCode } from "@/lib/api";
