@@ -469,3 +469,42 @@ export async function addClick(code: string): Promise<{ status: number, message:
     return { status: 500, message: 'Unexpected error' };
   }
 }
+
+/**
+ * Queries the database for links associated with a user ID
+ * @param {number} userId - User ID
+ * @returns {Promise<{ status: number; message: string; links?: Array<{ code: string; origin: string; click_count: number }> }>}
+ */
+export async function getCodesForUserId(userId: number): Promise<{ status: number; message: string; links?: Array<{ code: string; origin: string; click_count: number }> }> {
+  const sql = "SELECT code, origin, click_count FROM links WHERE user_id = ?";
+  const values = [userId];
+
+  try {
+    const result = await new Promise<any[]>((resolve, reject) => {
+      DB.query(sql, values, (err, res) => {
+        if (err) {
+          Logger({
+            status: "ERROR",
+            message: `Error executing query: ${err.message}`,
+          });
+          reject({ status: 500, message: "Unexpected error" });
+        } else {
+          resolve(res);
+        }
+      });
+    });
+
+    if (result.length === 0) {
+      Logger({ status: "WARN", message: "No links found for the user" });
+      return { status: 404, message: "No links found", links: [] };
+    }
+
+    return { status: 200, message: "Links found", links: result };
+  } catch (err) {
+    Logger({
+      status: "ERROR",
+      message: `Error in getCodesForUserId: ${err}`,
+    });
+    return { status: 500, message: "Unexpected error", links: [] };
+  }
+}
