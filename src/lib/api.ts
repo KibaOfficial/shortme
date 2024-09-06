@@ -355,6 +355,10 @@ export async function createShort(
   }
 }
 
+export async function deleteCode(code: string): Promise<{ status: number; message: string}> {
+  return { status: 500, message: "Not implemented" };
+}
+
 /**
  * Queries the database for the user id using the session token
  * @param {string} token - Session Token
@@ -512,3 +516,4 @@ export async function getCodesForUserId(userId: number): Promise<{ status: numbe
     return { status: 500, message: "Unexpected error", links: [] };
   }
 }
+

@@ -5,7 +5,9 @@
 
 "use client";
 
+import Logger from "@/lib/logger";
 import React, { useEffect, useState } from "react";
+import { FiX } from "react-icons/fi";
 
 interface Link {
   code: string;
@@ -17,6 +19,28 @@ const CodeList: React.FC = () => {
   const [links, setLinks] = useState<Link[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = async (code: string) => {
+    try {
+      const response = await fetch("/api/delete-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code }),
+      })
+
+      if (response.ok) {
+        setLinks((prevLinks) => prevLinks.filter((link) => link.code !== code));
+        Logger({ status: "INFO", message: `Code ${code} deleted successfully.` });
+      } else {
+        Logger({ status: "ERROR", message: `Failed to delete code: ${code}` });
+      }
+      
+    } catch (error) {
+      Logger({ status: "ERROR", message: `Failed to delete code: ${error}`})
+    }
+  }
 
   useEffect(() => {
     async function fetchLinks() {
@@ -79,6 +103,14 @@ const CodeList: React.FC = () => {
                   </a>
                 </td>
                 <td className="px-6 py-4 text-white">{link.click_count}</td>
+                <td className="px-6 py-4 text-white">
+                <button
+                    onClick={() => handleDelete(link.code)} // Löschen-Button mit handleDelete
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <FiX size={20} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

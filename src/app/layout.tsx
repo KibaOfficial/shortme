@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: `${baseUrl}/images/og-image.png`,
+        url: `${baseUrl}/logo.jpeg`,
         width: 1200,
         height: 630,
         alt: 'ShortMe - URL shortener',
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     site: '@KibaOfficialOwO',
     creator: '@KibaOfficialOwO',
     images: [
-      `${baseUrl}/images/twitter-image.png`,
+      `${baseUrl}/logo.jpeg`,
     ],
   },
 
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     },
     {
       rel: "apple-touch-icon",
-      url: `${baseUrl}/apple-touch-icon.png`,
+      url: `${baseUrl}/logo.jpeg`,
       sizes: "180x180",
     },
   ],
@@ -81,8 +81,8 @@ export default function RootLayout({
         <link rel="canonical" href={baseUrl} />
       </head>
       <body className={font.className}>
-          <Header />
-          {children}
+        <Header />
+        {children}
       </body>
     </html>
   );
