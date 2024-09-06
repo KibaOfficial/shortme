@@ -2,9 +2,7 @@
 // 
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
-
 "use client"
-import Logger from "@/lib/logger";
 import { useState } from "react";
 
 const ShortForm: React.FC = () => {
@@ -12,22 +10,7 @@ const ShortForm: React.FC = () => {
   const [message, setMessage] = useState('');
   const [code, setCode] = useState('');
   const [origin, setOrigin] = useState('');
-  const [link, setLink] = useState('');
-
-  const base = process.env.NEXT_PUBLIC_HOSTNAME || 'http://localhost:3000';
-
-  const copyToClipboard = (text: string) => {
-    Logger({ status: "INFO", message: `Link: ${text}` });
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        console.log("Link copied to clipboard")
-      })
-      .catch(() => {
-        console.log("Failed to copy link to clipboard")
-      })
-  }
-
-
+  const [shortUrl, setShortUrl] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,13 +30,16 @@ const ShortForm: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setLink(`${base}/${data.code}`)
-        setMessage(`Link successfully created: ${link}`);
-
-        copyToClipboard(link);
+        setShortUrl(data.shortUrl);
         setMessage(data.message);
-        setCode('');
-        setOrigin('');
+
+        navigator.clipboard.writeText(data.shortUrl)
+          .then(() => {
+            console.log('Short URL copied to clipboard');
+          })
+          .catch(err => {
+            console.error('Failed to copy short URL: ', err);
+          });
       } else {
         setError(data.message);
       }

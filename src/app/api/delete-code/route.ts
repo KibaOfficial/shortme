@@ -11,6 +11,8 @@ export async function POST(request: NextRequest) {
   try {
     const { code } = await request.json()
 
+    Logger({ status: "DEBUG", message: `Code to delete is: ${code}`})
+
     if (!code) {
       Logger({ status: "ERROR", message: "No code provided"})
       return NextResponse.json({ message: "No code provided" }, { status: 400 })

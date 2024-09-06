@@ -1,5 +1,5 @@
 // Copyright (c) 2024 KibaOfficial
-// 
+//
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
@@ -10,10 +10,13 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const { code, origin } = await request.json();
-    const token = request.cookies.get('session_token')?.value;
+    const token = request.cookies.get("session_token")?.value;
 
     if (!token) {
-      return NextResponse.json({ message: "Missing session cookie" }, { status: 401 });
+      return NextResponse.json(
+        { message: "Missing session cookie" },
+        { status: 401 }
+      );
     }
 
     const { id: user_id } = await getUserIdBySessionToken(token);
@@ -24,13 +27,22 @@ export async function POST(request: NextRequest) {
     });
 
     if (!code) {
-      return NextResponse.json({ message: "Missing code parameter" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Missing code parameter" },
+        { status: 400 }
+      );
     }
     if (!origin) {
-      return NextResponse.json({ message: "Missing origin parameter" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Missing origin parameter" },
+        { status: 400 }
+      );
     }
     if (!user_id) {
-      return NextResponse.json({ message: "Missing user_id parameter" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Missing user_id parameter" },
+        { status: 400 }
+      );
     }
 
     const result = await createShort(code, origin, user_id);
@@ -39,7 +51,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: result.message }, { status: 409 });
     }
 
-    return NextResponse.json(result, { status: result.status });
+    const baseUrl = process.env.NEXT_PUBLIC_HOSTNAME || "http://localhost:3000";
+    const shortUrl = `${baseUrl}/${code}`;
+
+    return NextResponse.json({ message: result.message, shortUrl }, { status: result.status });
   } catch (error) {
     Logger({
       status: "ERROR",

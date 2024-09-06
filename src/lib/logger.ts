@@ -10,8 +10,8 @@ dotenv.config();
 type LoggerStatus = "ERROR" | "WARN" | "INFO" | "DEBUG";
 
 interface LoggerProps {
-  status: LoggerStatus; // status of the log
-  message: string;      // message to log
+  status: LoggerStatus; 
+  message: string;      
 }
 
 

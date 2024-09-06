@@ -105,7 +105,7 @@ const CodeList: React.FC = () => {
                 <td className="px-6 py-4 text-white">{link.click_count}</td>
                 <td className="px-6 py-4 text-white">
                 <button
-                    onClick={() => handleDelete(link.code)} // Löschen-Button mit handleDelete
+                    onClick={() => handleDelete(link.code)}
                     className="text-red-500 hover:text-red-700"
                   >
                     <FiX size={20} />

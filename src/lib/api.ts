@@ -6,13 +6,13 @@
 
 "use server";
 
-// Import necessary libraries
+// Libs
 import bcrypt from "bcrypt";
 import fs from "fs";
 import jwt from "jsonwebtoken";
 import Cookies from "js-cookie";
 
-// Import utility modules
+// utils 
 import DB from "@/lib/DB";
 import Logger from "@/lib/logger";
 
@@ -22,10 +22,9 @@ const PUB_KEY_FILE = "./data/public.pem";
 const PRIV_KEY = fs.readFileSync(PRIV_KEY_FILE, { encoding: "ascii" });
 const PUB_KEY = fs.readFileSync(PUB_KEY_FILE, { encoding: "ascii" });
 
-// Session validity duration (1 hour)
 const SESSION_VALID_TIME_MS = 1000 * 60 * 60; // 1 hour
 
-// Connect to the database and log the result
+// Connect to the db
 DB.connect((err) => {
   if (err) {
     Logger({
@@ -40,9 +39,9 @@ DB.connect((err) => {
 /**
  * Registers a new user in the database.
  *
- * @param {string} username - The username of the new user.
- * @param {string} password - The password of the new user.
- * @returns {Promise<{ status: number; message: string }>} The result of the registration.
+ * @param {string} username - username of the new user.
+ * @param {string} password - password of the new user.
+ * @returns {Promise<{ status: number; message: string }>} result of registration.
  */
 export async function register(
   username: string,
@@ -88,9 +87,9 @@ export async function register(
 /**
  * Logs in a user and returns a session token.
  *
- * @param {string} username - The username of the user trying to log in.
- * @param {string} password - The password of the user trying to log in.
- * @returns {Promise<{ status: number; message: string; token?: string }>} The result of the login attempt, including a token if successful.
+ * @param {string} username - username of user trying to log in.
+ * @param {string} password - password of user trying to log in.
+ * @returns {Promise<{ status: number; message: string; token?: string }>} result of the login attempt, sends back a token if successful.
  */
 export async function login(
   username: string,
@@ -168,8 +167,8 @@ export async function login(
 /**
  * Logs out a user and deletes the session token.
  *
- * @param {string} username
- * @returns {Promise<{ status: number; message: string; }>}
+ * @param {string} username - username of user trying to log out
+ * @returns {Promise<{ status: number; message: string; }>} - result of the logout attempt
  */
 export async function logout(
   username: string
@@ -202,38 +201,6 @@ export async function logout(
   } catch (err) {
     Logger({ status: "ERROR", message: `Error logging out user: ${err}` });
     return { status: 500, message: "Unexpected error" };
-  }
-}
-
-/**
- * Retrieves the session cookie from the browser.
- *
- * @returns {Promise<{ status: number; message: string; cookie?: string }>} The session cookie, or null if not found.
- */
-export async function getSessionCookie(): Promise<{
-  status: number;
-  message: string;
-  cookie?: string;
-}> {
-  try {
-    const cookie = Cookies.get("session_token");
-    Logger({ status: "DEBUG", message: `User Session Cookie: ${cookie}` });
-    if (cookie) {
-      Logger({ status: "DEBUG", message: `User Session Cookie: ${cookie}` });
-      return { status: 200, message: "Session cookie found", cookie };
-    } else {
-      Logger({ status: "DEBUG", message: "No session cookie found." });
-      return { status: 404, message: "No session cookie found." };
-    }
-  } catch (error) {
-    Logger({
-      status: "ERROR",
-      message: `Error retrieving session cookie: ${error}`,
-    });
-    return {
-      status: 500,
-      message: "An error occurred while retrieving the session cookie.",
-    };
   }
 }
 
@@ -317,7 +284,7 @@ export async function createShort(
   code: string,
   origin: string,
   user_id: number
-): Promise<{ status: number; message: string }> {
+): Promise<{ status: number; message: string; shortUrl?: string }> {
   const sql = "INSERT INTO links (code, origin, user_id) VALUES (?, ?, ?)";
   const values = [code, origin, user_id];
 
@@ -328,10 +295,6 @@ export async function createShort(
           Logger({
             status: "ERROR",
             message: `Error while creating short link: ${err.message}`,
-          });
-          Logger({
-            status: "ERROR",
-            message: `Error code: ${err.code}`,
           });
 
           if (err.code === "ER_DUP_ENTRY") {
@@ -345,7 +308,10 @@ export async function createShort(
       });
     });
 
-    return { status: 201, message: "Short link created successfully" };
+    const baseUrl = process.env.NEXT_PUBLIC_HOSTNAME || 'http://localhost:3000';
+    const shortUrl = `${baseUrl}/${code}`;
+
+    return { status: 201, message: "Short link created successfully", shortUrl };
   } catch (err) {
     Logger({
       status: "ERROR",
@@ -355,8 +321,36 @@ export async function createShort(
   }
 }
 
+
+/**
+ * Deletes the short code entry from the database.
+ *
+ * @param {string} code - The code to remove from the database.
+ * @returns {Promise<{ status: number; message: string}>} - A promise that resolves to an object containing the status code and a message.
+ */
 export async function deleteCode(code: string): Promise<{ status: number; message: string}> {
-  return { status: 500, message: "Not implemented" };
+  const sql = "DELETE FROM links WHERE code = ?";
+  const values = [code];
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      DB.query(sql, values, (err) => {
+        if (err) {
+          Logger({
+            status: "ERROR",
+            message: `Error while deleting short link: ${err.message}`,
+          });
+          reject({ status: 500, message: `Error while deleting short link: ${err.message}` });
+        } else {
+          resolve()
+        }
+      });
+    });
+
+    return {status: 200, message: "Code deleted successfully"}
+  } catch (error) {
+    return { status: 500, message: "Unexpected error"}
+  }
 }
 
 /**
