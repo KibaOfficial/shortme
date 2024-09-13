@@ -8,6 +8,7 @@
 import Logger from "@/lib/logger";
 import React, { useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
+import { Button } from "./button";
 
 interface Link {
   code: string;
@@ -104,12 +105,13 @@ const CodeList: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 text-white">{link.click_count}</td>
                 <td className="px-6 py-4 text-white">
-                <button
+                <Button
+                    variant="link"
                     onClick={() => handleDelete(link.code)}
                     className="text-red-500 hover:text-red-700"
                   >
                     <FiX size={20} />
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}

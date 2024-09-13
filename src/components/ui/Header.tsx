@@ -7,14 +7,15 @@ import Image from "next/image";
 import { FiMenu, FiX } from "react-icons/fi";
 import Logger from "@/lib/logger";
 import Cookies from "js-cookie";
+import { Button } from "./button";
 
 const Header: React.FC = () => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDashboardUi, setIsDashboardUi] = useState(false);
   const [error, setError] = useState('');
-  const activeLink = "block py-2 px-4 rounded-md bg-blue-800 text-white";
-  const inactiveLink = "py-2 rounded-md";
+  const activeLink = "primary";
+  const inactiveLink = "secondary";
 
   const router = useRouter();
 
@@ -67,14 +68,14 @@ const Header: React.FC = () => {
           </Link>
         </div>
         {isDashboardUi ? (
-          <>
-            <button
+          <div className="flex flex-col items-center">
+            <Button
+              variant="ghost"
               onClick={toggleMenu}
-              className="text-white flex items-center"
               aria-label="Toggle menu"
             >
               {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-            </button>
+            </Button>
             <div
               className={`fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity ${
                 isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -86,34 +87,43 @@ const Header: React.FC = () => {
                   isMenuOpen ? "translate-x-0" : "translate-x-full"
                 }`}
               >
-                <button
+                <Button
+                  variant="link"
                   onClick={toggleMenu}
-                  className="text-white flex items-center mb-4"
+                  className="text-white"
                   aria-label="Close menu"
                 >
                   <FiX size={24} />
-                </button>
-                <ul className="space-y-4">
+                </Button>
+                <ul className="space-y-4 flex flex-col items-start">
                   {error && <li className="text-red-500">{error}</li>}
                   <li>
-                    <Link href="/" className={pathname === "/" ? activeLink : inactiveLink}>
-                      Home
-                    </Link>
+                    <Button
+                      variant={pathname === "/" ? activeLink : inactiveLink}
+                    >
+                      <a href="/">
+                        Home
+                      </a>
+                    </Button>
                   </li>
                   <li>
-                    <Link href="/dashboard" className={pathname === "/dashboard" ? activeLink : inactiveLink}>
-                      Dashboard
-                    </Link>
+                    <Button
+                      variant={pathname === "/dashboard" ? activeLink : inactiveLink}
+                    >
+                      <a href="/dashboard" >
+                        Dashboard
+                      </a>
+                    </Button>
                   </li>
                   <li>
-                    <button onClick={logoutHandler} className={activeLink}>
+                    <Button onClick={logoutHandler} variant="primary">
                       Logout
-                    </button>
+                    </Button>
                   </li>
                 </ul>
               </div>
             </div>
-          </>
+          </div>
         ) : (
           <nav>
             <ul className="flex space-x-4 items-center">

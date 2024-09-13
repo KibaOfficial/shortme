@@ -1,9 +1,9 @@
 // Copyright (c) 2024 KibaOfficial
-// 
+//
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-"use client"
+"use client";
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -19,10 +19,17 @@ const RedirectPage: React.FC = () => {
         const code = path.split("/").pop();
         if (!code) return;
 
-        const { status, origin } = await getLinkByCode(code);
+        const response = await fetch("/api/get-link", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ code }),
+        });
 
-        if (status === 404) {
-          console.error("Link not found");
+        const data = await response.json();
+
+        if (data.status === 404) {
           return;
         }
 

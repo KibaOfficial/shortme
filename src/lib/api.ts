@@ -12,7 +12,7 @@ import fs from "fs";
 import jwt from "jsonwebtoken";
 import Cookies from "js-cookie";
 
-// utils 
+// utils
 import DB from "@/lib/DB";
 import Logger from "@/lib/logger";
 
@@ -308,10 +308,14 @@ export async function createShort(
       });
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_HOSTNAME || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_HOSTNAME || "http://localhost:3000";
     const shortUrl = `${baseUrl}/${code}`;
 
-    return { status: 201, message: "Short link created successfully", shortUrl };
+    return {
+      status: 201,
+      message: "Short link created successfully",
+      shortUrl,
+    };
   } catch (err) {
     Logger({
       status: "ERROR",
@@ -321,14 +325,15 @@ export async function createShort(
   }
 }
 
-
 /**
  * Deletes the short code entry from the database.
  *
  * @param {string} code - The code to remove from the database.
  * @returns {Promise<{ status: number; message: string}>} - A promise that resolves to an object containing the status code and a message.
  */
-export async function deleteCode(code: string): Promise<{ status: number; message: string}> {
+export async function deleteCode(
+  code: string
+): Promise<{ status: number; message: string }> {
   const sql = "DELETE FROM links WHERE code = ?";
   const values = [code];
 
@@ -340,16 +345,19 @@ export async function deleteCode(code: string): Promise<{ status: number; messag
             status: "ERROR",
             message: `Error while deleting short link: ${err.message}`,
           });
-          reject({ status: 500, message: `Error while deleting short link: ${err.message}` });
+          reject({
+            status: 500,
+            message: `Error while deleting short link: ${err.message}`,
+          });
         } else {
-          resolve()
+          resolve();
         }
       });
     });
 
-    return {status: 200, message: "Code deleted successfully"}
+    return { status: 200, message: "Code deleted successfully" };
   } catch (error) {
-    return { status: 500, message: "Unexpected error"}
+    return { status: 500, message: "Unexpected error" };
   }
 }
 
@@ -428,7 +436,7 @@ export async function getLinkByCode(
     return {
       status: 200,
       message: "Link found",
-      origin: result[0].origin
+      origin: result[0].origin,
     };
   } catch (err) {
     Logger({
@@ -440,20 +448,25 @@ export async function getLinkByCode(
 }
 
 /**
- * 
+ *
  * @param {string} code - Code of the shortened url
  * @returns {Promise<{ status: number; message: string;}>}
  */
-export async function addClick(code: string): Promise<{ status: number, message: string}> {
-  const sql = 'UPDATE links SET click_count = click_count + 1 WHERE code = ?';
+export async function addClick(
+  code: string
+): Promise<{ status: number; message: string }> {
+  const sql = "UPDATE links SET click_count = click_count + 1 WHERE code = ?";
   const values = [code];
 
   try {
     const result = await new Promise<any>((resolve, reject) => {
       DB.query(sql, values, (err, res) => {
         if (err) {
-          Logger({ status: 'ERROR', message: `SQL error: ${JSON.stringify(err)}` });
-          reject({ status: 500, message: 'Unexpected error' });
+          Logger({
+            status: "ERROR",
+            message: `SQL error: ${JSON.stringify(err)}`,
+          });
+          reject({ status: 500, message: "Unexpected error" });
         } else {
           resolve(res);
         }
@@ -461,14 +474,17 @@ export async function addClick(code: string): Promise<{ status: number, message:
     });
 
     if (result.affectedRows === 0) {
-      Logger({ status: 'WARN', message: 'Link not found' });
-      return { status: 404, message: 'Link not found' };
+      Logger({ status: "WARN", message: "Link not found" });
+      return { status: 404, message: "Link not found" };
     }
 
-    return { status: 200, message: 'Link found and updated' };
+    return { status: 200, message: "Link found and updated" };
   } catch (error) {
-    Logger({ status: 'ERROR', message: `Error in addClick: ${JSON.stringify(error)}` });
-    return { status: 500, message: 'Unexpected error' };
+    Logger({
+      status: "ERROR",
+      message: `Error in addClick: ${JSON.stringify(error)}`,
+    });
+    return { status: 500, message: "Unexpected error" };
   }
 }
 
@@ -477,7 +493,11 @@ export async function addClick(code: string): Promise<{ status: number, message:
  * @param {number} userId - User ID
  * @returns {Promise<{ status: number; message: string; links?: Array<{ code: string; origin: string; click_count: number }> }>}
  */
-export async function getCodesForUserId(userId: number): Promise<{ status: number; message: string; links?: Array<{ code: string; origin: string; click_count: number }> }> {
+export async function getCodesForUserId(userId: number): Promise<{
+  status: number;
+  message: string;
+  links?: Array<{ code: string; origin: string; click_count: number }>;
+}> {
   const sql = "SELECT code, origin, click_count FROM links WHERE user_id = ?";
   const values = [userId];
 
@@ -510,4 +530,3 @@ export async function getCodesForUserId(userId: number): Promise<{ status: numbe
     return { status: 500, message: "Unexpected error", links: [] };
   }
 }
-
