@@ -2,12 +2,11 @@
 //
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
-
 "use client";
-
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { addClick, getLinkByCode } from "@/lib/api";
+import { addClick } from "@/lib/api";
+import NotFound from "../not-found";
 
 const RedirectPage: React.FC = () => {
   const router = useRouter();
@@ -17,7 +16,11 @@ const RedirectPage: React.FC = () => {
     const handleRedirect = async () => {
       try {
         const code = path.split("/").pop();
-        if (!code) return;
+        if (!code) {
+          return (
+            <NotFound />
+          );
+        }
 
         const response = await fetch("/api/get-link", {
           method: "POST",
@@ -29,10 +32,19 @@ const RedirectPage: React.FC = () => {
 
         const data = await response.json();
 
+        if (!data) return <NotFound />;
+
         if (data.status === 404) {
-          return;
+          return (
+            <NotFound />
+          );
+        } else if (data.status === 500) {
+          return (
+            <NotFound />
+          )
         }
 
+        const origin = data?.link
         if (origin) {
           await addClick(code);
           router.replace(origin.toString());
@@ -45,7 +57,9 @@ const RedirectPage: React.FC = () => {
     handleRedirect();
   }, [path, router]);
 
-  return null;
+  return (
+    <NotFound />
+  );
 };
 
 export default RedirectPage;

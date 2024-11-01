@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const session_token = request.cookies.get('session_token')?.value;
 
     if (!session_token) {
-      return NextResponse.json({ message: 'No session token found' }, { status: 401 });
+      return NextResponse.json({ message: 'No session token found' }, { status: 404 });
     }
 
     const response = await isSessionValid(session_token);

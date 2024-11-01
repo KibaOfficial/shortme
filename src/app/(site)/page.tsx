@@ -4,14 +4,12 @@
 // https://opensource.org/licenses/MIT
 "use client";
 import { Button } from "@/components/ui/button";
-import Logger from "@/lib/logger";
 import { useRouter } from "next/navigation";
 
 const Home: React.FC = () => {
   const router = useRouter();
-
+  
   const handleClick = () => {
-    Logger({ status: "DEBUG", message: "Button clicked" });
     router.push("/auth");
   };
 

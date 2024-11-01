@@ -6,7 +6,7 @@
 "use client";
 
 import Logger from "@/lib/logger";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
 import { Button } from "./button";
 
@@ -39,7 +39,7 @@ const CodeList: React.FC = () => {
       }
       
     } catch (error) {
-      Logger({ status: "ERROR", message: `Failed to delete code: ${error}`})
+      Logger({ status: "ERROR", message: `Failed to delete code: ${error}` });
     }
   }
 

@@ -5,7 +5,7 @@
 "use client"
 import AuthForm from "@/components/auth/AuthForm";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 const AuthPage: React.FC = () => {
   const router = useRouter();
@@ -18,6 +18,8 @@ const AuthPage: React.FC = () => {
 
         if (response.status === 200 && data.isValid) {
           router.push('/dashboard');
+        } else {
+          return;
         }
       } catch (err) {
         console.error("Error verifying session:", err);

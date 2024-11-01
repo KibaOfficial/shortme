@@ -24,11 +24,10 @@ export async function POST(request: NextRequest) {
 
     if (response.status === 500) {
       return NextResponse.json(
-        { message: response.message },
-        { status: response.status }
+        { message: "Internal server error", status: 500}
       );
     } else if (response.status === 404) {
-      return NextResponse.json({ message: "Link not found" }, { status: 404 });
+      return NextResponse.json({ message: "Link not found", status: 404 });
     } else {
       const link = response.origin?.toString();
       return NextResponse.json({

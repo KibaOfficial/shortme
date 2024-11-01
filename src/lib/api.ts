@@ -11,6 +11,7 @@ import bcrypt from "bcrypt";
 import fs from "fs";
 import jwt from "jsonwebtoken";
 import Cookies from "js-cookie";
+import { promisify } from 'util';
 
 // utils
 import DB from "@/lib/DB";
@@ -19,8 +20,28 @@ import Logger from "@/lib/logger";
 // Load private and public keys for JWT
 const PRIV_KEY_FILE = "./data/key.pem";
 const PUB_KEY_FILE = "./data/public.pem";
-const PRIV_KEY = fs.readFileSync(PRIV_KEY_FILE, { encoding: "ascii" });
-const PUB_KEY = fs.readFileSync(PUB_KEY_FILE, { encoding: "ascii" });
+
+let PRIV_KEY: string, PUB_KEY: string;
+
+try {
+  PRIV_KEY = fs.readFileSync(PRIV_KEY_FILE, { encoding: "ascii" });
+} catch (err) {
+  Logger({
+    status: "ERROR",
+    message: `Could not load private key from ${PRIV_KEY_FILE}: ${err}`
+  });
+  process.exit(1);
+}
+
+try {
+  PUB_KEY = fs.readFileSync(PUB_KEY_FILE, { encoding: "ascii" });
+} catch (err) {
+  Logger({
+    status: "ERROR",
+    message: `Could not load public key from ${PUB_KEY_FILE}: ${err}`
+  });
+  process.exit(1);
+}
 
 const SESSION_VALID_TIME_MS = 1000 * 60 * 60; // 1 hour
 
@@ -31,6 +52,7 @@ DB.connect((err) => {
       status: "ERROR",
       message: `Could not connect to database: ${err.message}`,
     });
+    process.exit(1);
   } else {
     Logger({ status: "INFO", message: "Connected to database" });
   }
@@ -61,7 +83,7 @@ export async function register(
         if (err) {
           Logger({
             status: "ERROR",
-            message: `Error executing query: ${err.message}`,
+            message: `Error executing query: ${(err as Error).message}`,
           });
           reject(err);
         } else {
@@ -100,36 +122,22 @@ export async function login(
     return { status: 400, message: "Username and password are required" };
   }
 
+  const queryAsync = promisify(DB.query).bind(DB);
+
   try {
-    const sql =
-      "SELECT username, password, session_token FROM users WHERE username = ?";
-    const result: any[] = await new Promise<any[]>((resolve, reject) => {
-      DB.query(sql, [username], (err, res) => {
-        if (err) {
-          Logger({
-            status: "ERROR",
-            message: `Error executing query: ${err.message}`,
-          });
-          reject(err);
-        } else {
-          resolve(res);
-        }
-      });
-    });
+    const sql = "SELECT id, username, password FROM users WHERE username = ?";
+    const result: any[] = await queryAsync(sql, [username]);
 
     if (result.length === 0) {
-      Logger({ status: "WARN", message: "User not found" });
+      Logger({ status: "WARN", message: `User not found: ${username}` });
       return { status: 404, message: "User not found" };
     }
 
     const user = result[0];
-    if (!user) {
-      Logger({ status: "ERROR", message: "User not found" });
-      return { status: 404, message: "User not found" };
-    }
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
-      Logger({ status: "WARN", message: "Invalid password" });
+      Logger({ status: "WARN", message: `Invalid password for user: ${username}` });
       return { status: 401, message: "Invalid password" };
     }
 
@@ -159,8 +167,11 @@ export async function login(
 
     return { status: 200, message: "Login successful", token };
   } catch (err) {
-    Logger({ status: "ERROR", message: `Login error: ${err}` });
-    return { status: 500, message: "An error occurred while logging in" };
+    Logger({
+      status: "ERROR",
+      message: `Error executing query: ${(err as Error).message}`,
+    });
+    return { status: 500, message: "Internal server error" };
   }
 }
 
@@ -299,8 +310,10 @@ export async function createShort(
 
           if (err.code === "ER_DUP_ENTRY") {
             reject({ status: 409, message: "Short code already exists" });
+            return;
           } else {
             reject({ status: 500, message: "Unexpected error" });
+            return;
           }
         } else {
           resolve();
@@ -529,4 +542,39 @@ export async function getCodesForUserId(userId: number): Promise<{
     });
     return { status: 500, message: "Unexpected error", links: [] };
   }
+}
+
+export async function getUserRoleFromUserId(userId: string): Promise<{ status: number, message: string, role?: string }> {
+
+  const sql = 'SELECT role FROM user WHERE user_id = ?'
+  const values = [userId]
+
+  try {
+    const result = await new Promise<string>((resolve, reject) => {
+      DB.query(sql, values, (err, res) => {
+        if (err) {
+          Logger({
+            status: "ERROR",
+            message: `Error executing query: ${err}`,
+          });
+          reject({ status: 500, message: "Internal server error" });
+        } else {
+          resolve(res)
+        }
+      });
+
+      if (result !== "user" && result !== "admin") {
+        return { status: 500, message: "Internal server error" }
+      }
+
+      return { status: 400, message: "User role found", userRole: result }
+    })
+  } catch (err) {
+    Logger({
+      status: 'ERROR',
+      message: `${err}`
+    })
+  }
+
+  return { status: 500, message: "Function not implemented yet." }
 }

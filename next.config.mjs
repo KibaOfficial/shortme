@@ -1,3 +1,4 @@
+/* eslint-disable import/no-anonymous-default-export */
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -7,4 +8,19 @@ const nextConfig = {
   }
 };
 
-export default nextConfig;
+export default {
+  ...nextConfig,
+  async headers() {
+    return [
+      {
+        source: '/:all*(svg|jpg|png)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
+      }
+    ]
+  }
+}
