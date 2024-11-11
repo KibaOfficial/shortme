@@ -14,7 +14,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/mysql": "^2.15.26",
     "bcrypt": "^5.1.1",
-    "cookie": "^0.6.0",
+    "cookie": "^1.0.1",
     "dotenv": "^16.4.5",
     "glob": "^11.0.0",
     "jsonwebtoken": "^9.0.2",
